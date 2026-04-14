@@ -1,0 +1,193 @@
+📋 PANDUAN KONEKSI MUSE 2 - STEP BY STEP
+
+============================================================
+STEP 1: PERSIAPAN MUSE 2 HEADBAND
+============================================================
+
+Sebelum menghubungkan ke computer, pastikan headband sudah aktif:
+
+1. Letakkan Muse 2 secara benar di kepala
+   - Sensor harus menyentuh kulit
+   - Jangan melalui rambut tebal
+
+2. Nyalakan headband:
+   - Tekan tombol ON (biasanya di samping kanan)
+   - Tunggu LED hijau menyala
+   - Ini berarti headband sudah ON dan siap pairing
+
+3. Aktifkan Pairing Mode:
+   - Tekan tombol di BELAKANG headband
+   - Tahan selama 15 detik
+   - LED akan berubah warna (pairing mode aktif)
+   - Jangan lepaskan sampai warnanya berubah
+
+✅ Muse 2 sekarang siap untuk dipasangkan!
+
+
+============================================================
+STEP 2: PAIR DI LINUX - OPSI A (GUI/Graphical)
+============================================================
+
+Jika Anda lebih suka menggunakan interface grafis:
+
+1. Buka Settings
+   - Cari "Bluetooth" di search bar
+   - Klik Bluetooth Settings
+
+2. Aktifkan Bluetooth
+   - Pastikan toggle ON
+   - Tunggu scan mencari device
+
+3. Cari Muse 2
+   - Cari "Muse-XXXX" (XXXX adalah 4 digit)
+   - Contoh: "Muse-2DAE"
+
+4. Pair Device
+   - Klik pada Muse device
+   - Klik "Pair" atau "Connect"
+   - Tunggu sampai Connected
+
+5. Konfirmasi koneksi
+   - Setelah connect, Anda akan melihat "Connected" status
+
+✅ Selesai!
+
+
+============================================================
+STEP 3: PAIR DI LINUX - OPSI B (Terminal)
+============================================================
+
+Jika lebih suka terminal (power user):
+
+# 1. Buka bluetoothctl
+$ bluetoothctl
+
+# 2. Di dalam bluetoothctl prompt, jalankan:
+[bluetooth]# pairable on
+[bluetooth]# discoverable on
+[bluetooth]# scan on
+
+# 3. Tunggu sampai muncul "Muse-XXXX" dalam list
+   Contoh output:
+   [NEW] Device 00:55:DA:B0:F2:9E Muse-2DAE
+
+# 4. CATAT alamat MAC device (00:55:DA:B0:F2:9E)
+
+# 5. Pair dengan device
+[bluetooth]# pair 00:55:DA:B0:F2:9E
+
+# 6. Tunggu sampai "Pairing successful"
+
+# 7. Trust the device
+[bluetooth]# trust 00:55:DA:B0:F2:9E
+
+# 8. Connect
+[bluetooth]# connect 00:55:DA:B0:F2:9E
+
+# 9. Keluar bluetoothctl
+[bluetooth]# quit
+
+✅ Selesai!
+
+
+============================================================
+STEP 4: VERIFIKASI KONEKSI
+============================================================
+
+Cek apakah Linux sudah bisa melihat Muse:
+
+# Terminal command:
+$ python3 -c "from muselsl import list_muses; print(list_muses())"
+
+Expected output:
+['Muse-2DAE']  ← Harus ada device Anda di sini!
+
+Jika lihat output seperti itu, Anda siap!
+
+
+============================================================
+STEP 5: JALANKAN DATA COLLECTION
+============================================================
+
+Setelah verify, jalankan script collection:
+
+# Opsi 1: Script guided (recommended untuk pemula)
+$ python3 muse_connect_guided.py
+
+# Opsi 2: Script original
+$ python3 muse_connect.py
+
+Script akan:
+1. Mencari Muse 2
+2. Terhubung otomatis
+3. Mulai recording data
+4. Simpan ke file CSV
+5. Tekan Ctrl+C untuk stop
+
+
+============================================================
+📊 DATA YANG DIREKAM
+============================================================
+
+File CSV akan berisi:
+- Timestamp: Waktu pengambilan data
+- Time_sec: Durasi (detik)
+- AF7_uV: Sensor kiri depan (microvolts)
+- AF8_uV: Sensor kanan depan
+- TP9_uV: Sensor kiri belakang
+- TP10_uV: Sensor kanan belakang
+- Aux_uV: Sensor auxiliary
+
+Semua data disimpan di folder: muse_data/
+
+
+============================================================
+🎯 TROUBLESHOOTING
+============================================================
+
+❌ "ModuleNotFoundError: No module named 'muselsl'"
+   → Jalankan: pip install muselsl
+
+❌ "No Muse device found"
+   → Cek apakah headband sudah ON (LED hijau)
+   → Cek apakah sudah pairing mode (tekan tombol 15 detik)
+   → Cek Bluetooth settings, pastikan sudah terpair
+
+❌ "Unexpected error when scanning"
+   → Jalankan: sudo systemctl restart bluetooth
+   → Jalankan: sudo hciconfig hci0 piscan
+   → Coba ulang pairing
+
+❌ "Connection timeout"
+   → Headband mungkin jauh atau di lokasi dengan interferensi
+   → Dekatkan headband ke computer
+   → Jalankan di ruangan yang lebih tenang (less interference)
+
+❌ Sudah pair tapi tetap tidak ketemu
+   → Jalankan: bluetoothctl
+   → List paired: [bluetooth]# paired-devices
+   → Jika ada, tunggu 30 detik lalu coba lagi
+
+✅ Jika masih bermasalah, pastikan:
+   - Bluetooth Linux sudah running: sudo systemctl start bluetooth
+   - Muse headband sudah di dekat computer (< 2 meter)
+   - Tidak ada device lain yang mengganggu
+
+============================================================
+🚀 NEXT STEPS
+============================================================
+
+Setelah berhasil record:
+
+1. Lihat data di: muse_data/muse_data_YYYYMMDD_HHMMSS.csv
+
+2. Buka Dashboard:
+   $ docker compose up -d
+   $ open http://localhost:9009
+
+3. Upload data dan lihat visualisasi:
+   - Real-time charts
+   - Frequency analysis
+   - Band power statistics
+
+Happy recording! 🧠✨

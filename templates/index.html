@@ -1,0 +1,480 @@
+{% extends "base.html" %}
+
+{% block title %}Muse 2 Dashboard - Home{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>Muse 2 EEG Data Dashboard</h1>
+    <p style="color: #666; margin-top: 10px;">Real-time visualization dan analisis data EEG</p>
+    
+    <div class="header-info">
+        <div class="info-card">
+            <label>Status</label>
+            <p><span class="status-badge {% if 'tersedia' in status %}success{% else %}warning{% endif %}">{{ status }}</span></p>
+        </div>
+        <div class="info-card">
+            <label>Data Points</label>
+            <p>{{ data_points }} sampel</p>
+        </div>
+        <div class="info-card">
+            <label>File Aktif</label>
+            <p style="font-size: 12px;">{{ csv_file.split('/')[-1] if csv_file else 'No file' }}</p>
+        </div>
+        <div class="info-card">
+            <label>Sampling Rate</label>
+            <p>256 Hz</p>
+        </div>
+        <div class="info-card">
+            <label>📱 Apps</label>
+            <p><a href="/download" style="color: #667eea; text-decoration: none; font-weight: bold;">Download APK →</a></p>
+        </div>
+    </div>
+</div>
+
+<div class="grid-container">
+    <!-- Raw EEG Data -->
+    <div class="card">
+        <div class="card-title">📊 Raw EEG Signal</div>
+        <div class="selectors">
+            <select id="channelSelect" onchange="updateRawChart()">
+                <option value="AF7_uV">AF7 - Frontal Left</option>
+                <option value="AF8_uV">AF8 - Frontal Right</option>
+                <option value="TP9_uV">TP9 - Temporal Left</option>
+                <option value="TP10_uV">TP10 - Temporal Right</option>
+            </select>
+            <button class="button" onclick="refreshData()">🔄 Refresh</button>
+        </div>
+        <div class="chart-container">
+            <canvas id="rawChart"></canvas>
+        </div>
+        <p style="color: #999; font-size: 12px;">Channel yang dipilih: <strong id="selectedChannel">AF7 - Frontal Left</strong></p>
+    </div>
+
+    <!-- Frequency Spectrum -->
+    <div class="card">
+        <div class="card-title">📈 Frequency Spectrum</div>
+        <div class="selectors">
+            <select id="spectrumChannelSelect" onchange="updateSpectrumChart()">
+                <option value="AF7_uV">AF7 - Frontal Left</option>
+                <option value="AF8_uV">AF8 - Frontal Right</option>
+                <option value="TP9_uV">TP9 - Temporal Left</option>
+                <option value="TP10_uV">TP10 - Temporal Right</option>
+            </select>
+        </div>
+        <div class="chart-container">
+            <canvas id="spectrumChart"></canvas>
+        </div>
+        <p style="color: #999; font-size: 12px;">FFT Analysis (0-50 Hz)</p>
+    </div>
+</div>
+
+<!-- Statistics & Band Power -->
+<div class="grid-container">
+    <!-- Statistics -->
+    <div class="card">
+        <div class="card-title">📉 Statistics</div>
+        <div class="tabs">
+            <button class="tab active" onclick="switchStatTab('AF7_uV', this)">AF7</button>
+            <button class="tab" onclick="switchStatTab('AF8_uV', this)">AF8</button>
+            <button class="tab" onclick="switchStatTab('TP9_uV', this)">TP9</button>
+            <button class="tab" onclick="switchStatTab('TP10_uV', this)">TP10</button>
+        </div>
+        <div id="statsContent" style="padding: 15px 0;">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label">Mean</div>
+                    <div class="stat-value"><span id="stat-mean">-</span><span class="stat-unit">µV</span></div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Std Dev</div>
+                    <div class="stat-value"><span id="stat-std">-</span><span class="stat-unit">µV</span></div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Min</div>
+                    <div class="stat-value"><span id="stat-min">-</span><span class="stat-unit">µV</span></div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Max</div>
+                    <div class="stat-value"><span id="stat-max">-</span><span class="stat-unit">µV</span></div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Median</div>
+                    <div class="stat-value"><span id="stat-median">-</span><span class="stat-unit">µV</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Band Power -->
+    <div class="card">
+        <div class="card-title">🧠 Band Power Analysis</div>
+        <div class="selectors">
+            <select id="bandChannelSelect" onchange="updateBandPower()">
+                <option value="AF7_uV">AF7 - Frontal Left</option>
+                <option value="AF8_uV">AF8 - Frontal Right</option>
+                <option value="TP9_uV">TP9 - Temporal Left</option>
+                <option value="TP10_uV">TP10 - Temporal Right</option>
+            </select>
+        </div>
+        <div class="chart-container">
+            <canvas id="bandChart"></canvas>
+        </div>
+        <p style="color: #999; font-size: 12px;">Power dalam frequency bands (µV²)</p>
+    </div>
+</div>
+
+<!-- File Management -->
+<div class="card">
+    <div class="card-title">📁 File Management</div>
+    <div id="fileList" style="max-height: 300px; overflow-y: auto;">
+        <div class="loading">
+            <div class="spinner"></div>
+            Loading files...
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let rawChart, spectrumChart, bandChart;
+let allData = {};
+let allStats = {};
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    refreshData();
+    
+    if (AUTO_REFRESH) {
+        setInterval(refreshData, REFRESH_INTERVAL);
+    }
+});
+
+// Refresh semua data
+function refreshData() {
+    loadRawData();
+    loadStatistics();
+    loadFileList();
+}
+
+// Load raw data
+function loadRawData() {
+    axios.get('/api/data')
+        .then(response => {
+            allData = response.data;
+            if (!response.data.empty) {
+                updateRawChart();
+            } else {
+                showEmptyDataMessage('rawChart', 'Menunggu data EEG...');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading data:', error);
+            showEmptyDataMessage('rawChart', 'Menunggu data EEG...');
+        });
+}
+
+// Load statistics
+function loadStatistics() {
+    axios.get('/api/statistics')
+        .then(response => {
+            allStats = response.data;
+            updateStatistics('AF7_uV');
+        })
+        .catch(error => {
+            console.error('Error loading statistics:', error);
+        });
+}
+
+// Load file list
+function loadFileList() {
+    axios.get('/api/file-list')
+        .then(response => {
+            displayFileList(response.data);
+        })
+        .catch(error => {
+            console.error('Error loading file list:', error);
+        });
+}
+
+// Update raw chart
+function updateRawChart() {
+    const channel = document.getElementById('channelSelect').value;
+    const channelLabel = document.getElementById('channelSelect').options[document.getElementById('channelSelect').selectedIndex].text;
+    
+    document.getElementById('selectedChannel').textContent = channelLabel;
+    
+    if (!allData.time || allData.time.length === 0 || !allData.channels[channel] || allData.channels[channel].length === 0) {
+        showEmptyDataMessage('rawChart', 'Menunggu data EEG...');
+        return;
+    }
+
+    const ctx = document.getElementById('rawChart').getContext('2d');
+    
+    if (rawChart) {
+        rawChart.destroy();
+    }
+
+    rawChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: allData.time.map(t => t.toFixed(1)),
+            datasets: [{
+                label: channel,
+                data: allData.channels[channel],
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 1.5,
+                tension: 0.1,
+                fill: true,
+                pointRadius: 0,
+                pointHoverRadius: 5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        color: '#666',
+                        font: { size: 12 }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    title: { display: true, text: 'Amplitude (µV)' },
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                    ticks: { color: '#999', font: { size: 11 } }
+                },
+                x: {
+                    title: { display: true, text: 'Time (sec)' },
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                    ticks: { color: '#999', font: { size: 11 } }
+                }
+            }
+        }
+    });
+}
+
+// Update spectrum chart
+function updateSpectrumChart() {
+    const channel = document.getElementById('spectrumChannelSelect').value;
+    
+    axios.get(`/api/frequency-spectrum?channel=${channel}`)
+        .then(response => {
+            const data = response.data;
+            
+            if (data.empty || !data.frequency || data.frequency.length === 0) {
+                showEmptyDataMessage('spectrumChart', 'Menunggu data EEG...');
+                return;
+            }
+            
+            const ctx = document.getElementById('spectrumChart').getContext('2d');
+            
+            if (spectrumChart) {
+                spectrumChart.destroy();
+            }
+
+            spectrumChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.frequency.map(f => f.toFixed(1)),
+                    datasets: [{
+                        label: 'Magnitude',
+                        data: data.magnitude,
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        borderWidth: 1.5,
+                        tension: 0.1,
+                        fill: true,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: { color: '#666', font: { size: 12 } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Magnitude' },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: { color: '#999', font: { size: 11 } }
+                        },
+                        x: {
+                            title: { display: true, text: 'Frequency (Hz)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: { color: '#999', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error loading spectrum:', error);
+        });
+}
+
+// Update band power
+function updateBandPower() {
+    const channel = document.getElementById('bandChannelSelect').value;
+    
+    axios.get(`/api/band-power?channel=${channel}`)
+        .then(response => {
+            const data = response.data;
+            
+            if (data.empty) {
+                showEmptyDataMessage('bandChart', 'Menunggu data EEG...');
+                return;
+            }
+            
+            const labels = Object.keys(data).filter(k => k !== 'empty');
+            const values = labels.map(label => data[label]);
+            
+            const ctx = document.getElementById('bandChart').getContext('2d');
+            
+            if (bandChart) {
+                bandChart.destroy();
+            }
+
+            bandChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Power (µV²)',
+                        data: values,
+                        backgroundColor: [
+                            '#FF6B6B',
+                            '#4ECDC4',
+                            '#45B7D1',
+                            '#FFA07A',
+                            '#98D8C8'
+                        ],
+                        borderRadius: 5,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'x',
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: { color: '#666', font: { size: 12 } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            ticks: { color: '#999', font: { size: 11 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#999', font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error loading band power:', error);
+        });
+}
+
+// Update statistics
+function updateStatistics(channel) {
+    if (!allStats[channel]) {
+        return;
+    }
+
+    const stats = allStats[channel];
+    document.getElementById('stat-mean').textContent = formatNumber(stats.mean);
+    document.getElementById('stat-std').textContent = formatNumber(stats.std);
+    document.getElementById('stat-min').textContent = formatNumber(stats.min);
+    document.getElementById('stat-max').textContent = formatNumber(stats.max);
+    document.getElementById('stat-median').textContent = formatNumber(stats.median);
+}
+
+// Switch stat tab
+function switchStatTab(channel, element) {
+    document.querySelectorAll('#statsContent .tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    element.classList.add('active');
+    updateStatistics(channel);
+}
+
+// Display file list
+function displayFileList(files) {
+    const fileList = document.getElementById('fileList');
+    
+    if (files.length === 0) {
+        fileList.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No files found</p>';
+        return;
+    }
+
+    let html = '<table style="width: 100%; border-collapse: collapse;">';
+    html += '<tr style="background: #f8f9fa; border-bottom: 2px solid #ddd;">';
+    html += '<th style="padding: 12px; text-align: left; color: #667eea; font-weight: 600;">Filename</th>';
+    html += '<th style="padding: 12px; text-align: left; color: #667eea; font-weight: 600;">Modified</th>';
+    html += '<th style="padding: 12px; text-align: left; color: #667eea; font-weight: 600;">Size</th>';
+    html += '<th style="padding: 12px; text-align: center; color: #667eea; font-weight: 600;">Action</th>';
+    html += '</tr>';
+
+    files.forEach(file => {
+        html += '<tr style="border-bottom: 1px solid #eee;">';
+        html += `<td style="padding: 12px;"><code style="background: #f0f0f0; padding: 4px 8px; border-radius: 4px;">${file.name}</code></td>`;
+        html += `<td style="padding: 12px; color: #666; font-size: 12px;">${file.modified}</td>`;
+        html += `<td style="padding: 12px; color: #666; font-size: 12px;">${formatBytes(file.size)}</td>`;
+        html += `<td style="padding: 12px; text-align: center;">`;
+        html += `<a href="/api/download/${file.name}" class="button" style="padding: 6px 12px; font-size: 12px; text-decoration: none; display: inline-block;">⬇️ Download</a>`;
+        html += `</td>`;
+        html += '</tr>';
+    });
+
+    html += '</table>';
+    fileList.innerHTML = html;
+}
+
+// Show empty data message instead of error
+function showEmptyDataMessage(elementId, message) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.style.display = 'none';
+    }
+    
+    const container = element.parentElement;
+    let existingMessage = container.querySelector('.empty-message');
+    
+    if (!existingMessage) {
+        existingMessage = document.createElement('div');
+        existingMessage.className = 'empty-message';
+        existingMessage.style.cssText = `
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 8px;
+            color: #999;
+            font-size: 16px;
+            text-align: center;
+        `;
+        container.insertBefore(existingMessage, element);
+    }
+    
+    existingMessage.textContent = message;
+    existingMessage.style.display = 'flex';
+}
+</script>
+{% endblock %}

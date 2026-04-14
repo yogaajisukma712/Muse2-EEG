@@ -1,0 +1,50 @@
+# Android
+.gradle/
+.idea/
+build/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.jar
+
+# Java
+*.class
+*.jar
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# Build output
+app/build/
+*/build/
+
+# Gradle
+gradle/
+gradlew
+gradlew.bat
+.gradle
+
+# Local properties
+local.properties
+
+# Temporary files
+*.log
+~*
+*.tmp

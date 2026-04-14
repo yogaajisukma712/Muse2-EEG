@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  muse-dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: muse2-dashboard
+    ports:
+      - "9009:9009"
+    volumes:
+      # Mount muse_data folder untuk persist data
+      - ./muse_data:/app/muse_data
+      # Mount apk_downloads untuk APK files
+      - ./apk_downloads:/app/apk_downloads
+      # Mount scripts untuk development (optional)
+      - ./muse_connect.py:/app/muse_connect.py
+      - ./analyze_data.py:/app/analyze_data.py
+      - ./app.py:/app/app.py
+      - ./templates:/app/templates
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - muse-network
+
+networks:
+  muse-network:
+    driver: bridge

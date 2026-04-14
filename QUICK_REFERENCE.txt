@@ -1,0 +1,293 @@
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                                     │
+│   🧠 MUSE 2 + DASHBOARD - QUICK REFERENCE CARD                  │
+│                                                                     │
+│   Simpan file ini untuk digunakan nanti!                          │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+
+✅ BLUETOOTH STATUS: AKTIF
+═══════════════════════════════════════════════════════════════════════
+
+
+📝 QUICK CHECKLIST
+──────────────────
+
+Before:
+☐ Muse 2 charged?
+☐ Bluetooth pair done? (Settings → Bluetooth → Add Muse-XXXX)
+☐ Docker installed?
+
+Start:
+☐ Terminal 1: docker compose up -d
+☐ Terminal 2: python3 muse_connect.py
+☐ Browser: http://localhost:9009
+
+Done:
+☐ CSV file created in muse_data/
+☐ Dashboard showing 4 EEG channels
+☐ Can download data
+
+
+═══════════════════════════════════════════════════════════════════════
+
+
+💻 COMMAND QUICK COPY-PASTE
+───────────────────────────
+
+SETUP DASHBOARD:
+  cd "/home/ubuntu/Documents/Penelitian/EEG Muse"
+  docker compose up -d
+
+COLLECT DATA:
+  cd "/home/ubuntu/Documents/Penelitian/EEG Muse"
+  python3 muse_connect.py
+  # After 1-2 min, press Ctrl+C to stop
+
+VIEW DASHBOARD:
+  http://localhost:9009
+
+CHECK STATUS:
+  docker compose ps
+  curl http://localhost:9009
+  ls -lah muse_data/
+
+STOP DASHBOARD:
+  docker compose stop
+
+RESTART:
+  docker compose restart
+
+VIEW LOGS:
+  docker logs muse2-dashboard
+
+
+═══════════════════════════════════════════════════════════════════════
+
+
+🎯 TYPICAL USAGE SEQUENCE
+──────────────────────────
+
+9:00 - PAIR MUSE 2
+     Settings → Bluetooth → Add Device → Select Muse-XXXX
+
+9:01 - START SERVICES
+     Terminal 1: docker compose up -d
+
+9:02 - ACTIVATE DATA COLLECTION
+     Terminal 2: python3 muse_connect.py
+
+9:02 - WEAR HEADBAND
+     Put on Muse 2 and relax
+
+9:03-9:14 - RECORD DATA
+     Let it record for 10-12 minutes
+     (Can also do just 1-2 minutes for quick test)
+
+9:14 - STOP RECORDING
+     Terminal 2: Press Ctrl+C
+
+9:15 - VIEW DATA
+     Browser: http://localhost:9009
+     All analysis automatic!
+
+
+═══════════════════════════════════════════════════════════════════════
+
+
+📊 DASHBOARD FEATURES
+─────────────────────
+
+Raw EEG Signal
+  • Real-time from 4 channels
+  • Switch: Channel dropdown
+  • Refresh: Manual or auto (5s)
+
+Frequency Spectrum
+  • FFT analysis
+  • Range: 0-50 Hz
+  • Shows dominant frequencies
+
+Band Power Analysis
+  • Delta (0.5-4 Hz) = Sleep
+  • Theta (4-8 Hz) = Meditation
+  • Alpha (8-12 Hz) = Relaxed
+  • Beta (12-30 Hz) = Focus
+  • Gamma (30-50 Hz) = Thinking
+
+Statistics
+  • Mean, Std Dev
+  • Min, Max, Median
+  • Per channel
+
+File Management
+  • Download CSV
+  • View file list
+  • Check sizes
+
+
+═══════════════════════════════════════════════════════════════════════
+
+
+🔧 TROUBLESHOOTING
+──────────────────
+
+❌ Muse 2 not found
+   → Turn ON Muse 2
+   → Wait 20 seconds for BT discovery
+   → Pair manually in Settings
+
+❌ Connection error in muse_connect.py
+   → Open Settings → Bluetooth
+   → Click on Muse-XXXX → Connect
+
+❌ Dashboard not loading
+   → Check: curl http://localhost:9009
+   → Restart: docker compose restart
+
+❌ Port 9009 already in use
+   → Find: lsof -i :9009
+   → Kill: sudo kill -9 <PID>
+
+❌ Data not showing in dashboard
+   → Wait 30+ seconds recording
+   → Press F5 to refresh
+   → Check file: ls muse_data/
+
+
+═══════════════════════════════════════════════════════════════════════
+
+
+📱 MUSE 2 CHANNEL LOCATION
+──────────────────────────
+
+         AF7 ─ AF8
+          ↑     ↑
+       [Forehead]
+
+       TP9   TP10
+        ↑     ↑
+    [Ears/Temple]
+
+
+AF7  = Left forehead (thinking)
+AF8  = Right forehead (thinking)
+TP9  = Left temporal (emotion/memory)
+TP10 = Right temporal (emotion/memory)
+
+
+═══════════════════════════════════════════════════════════════════════
+
+
+💾 DATA FORMAT
+──────────────
+
+File Location:
+  /home/ubuntu/Documents/Penelitian/EEG Muse/muse_data/
+
+File Name:
+  muse_data_YYYYMMDD_HHMMSS.csv
+
+CSV Columns:
+  Timestamp        = ISO timestamp
+  Time_sec         = Time from start
+  AF7_uV           = Channel 1 (µV)
+  AF8_uV           = Channel 2 (µV)
+  TP9_uV           = Channel 3 (µV)
+  TP10_uV          = Channel 4 (µV)
+  Aux_uV           = Auxiliary (µV)
+
+Sampling Rate:    256 Hz
+Duration Example: 1 minute = 15,360 samples
+
+
+═══════════════════════════════════════════════════════════════════════
+
+
+🌐 REMOTE ACCESS (Optional)
+────────────────────────────
+
+For accessing from phone/other computer:
+
+Terminal (new):
+  cloudflared tunnel --url http://localhost:9009
+
+Copy URL:
+  https://xxxxx.trycloudflare.com
+
+Open anywhere:
+  https://xxxxx.trycloudflare.com
+
+Valid: 8 hours
+
+
+═════════════════════════════════════════════════════════════════════════
+
+
+📚 HELP & DOCS
+───────────────
+
+In: /home/ubuntu/Documents/Penelitian/EEG\ Muse/
+
+Quick:
+  • QUICK_SETUP_VISUAL.sh - This type of guide
+  • START_HERE.md - Getting started
+
+Detailed:
+  • MUSE_AND_DASHBOARD_GUIDE.md - Complete guide
+  • README.md - General info
+
+Advanced:
+  • SETUP_SUMMARY.md - Full walkthrough
+  • CLOUDFLARED_SETUP.md - Tunnel setup
+
+
+═════════════════════════════════════════════════════════════════════════
+
+
+⏰ EXPECTED TIMES
+──────────────────
+
+Pair Muse 2:       2 minutes
+Start Dashboard:   1 minute
+Collect Data:      2-5 minutes (record)
+View Results:      Instant
+Download CSV:      30 seconds
+
+
+═════════════════════════════════════════════════════════════════════════
+
+
+✨ KEY POINTS TO REMEMBER
+──────────────────────────
+
+✓ Pair headband FIRST via Bluetooth
+✓ Dashboard doesn't auto-start, you run it
+✓ Must run muse_connect.py to collect data
+✓ Data auto-saves to CSV
+✓ Dashboard auto-refreshes
+✓ Can collect multiple sessions
+✓ Each session = new CSV file
+
+
+═════════════════════════════════════════════════════════════════════════
+
+
+🚀 GO TRY IT!
+
+1. Pair Muse 2
+2. docker compose up -d
+3. python3 muse_connect.py
+4. http://localhost:9009
+
+That's it! 🎉
+
+
+═════════════════════════════════════════════════════════════════════════
+
+Last Updated: April 13, 2026
+Bluetooth: ✅ ACTIVE
+System: ✅ READY
+
+═════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,50 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'adopt'
+
+    - name: Make gradlew executable
+      run: chmod +x MuseEEGAndroid/gradlew
+
+    - name: Build Debug APK
+      run: |
+        cd MuseEEGAndroid
+        ./gradlew assembleDebug
+
+    - name: Build Release APK
+      run: |
+        cd MuseEEGAndroid
+        ./gradlew assembleRelease
+      continue-on-error: true
+
+    - name: Upload Debug APK
+      uses: actions/upload-artifact@v3
+      if: success()
+      with:
+        name: apk-debug
+        path: MuseEEGAndroid/app/build/outputs/apk/debug/*.apk
+
+    - name: Upload Release APK
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: apk-release
+        path: MuseEEGAndroid/app/build/outputs/apk/release/*.apk
+      continue-on-error: true

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:gravity="center">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🎧 Muse 2 EEG Dashboard"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="20dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Connect to Flask Server"
+        android:textSize="16sp"
+        android:layout_marginBottom="15dp" />
+
+    <EditText
+        android:id="@+id/serverUrlEditText"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:hint="http://192.168.1.100:9009"
+        android:inputType="text"
+        android:padding="10dp"
+        android:layout_marginBottom="15dp"
+        android:background="@android:drawable/edit_text" />
+
+    <Button
+        android:id="@+id/connectButton"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="Connect to Muse 2"
+        android:textSize="16sp"
+        android:layout_marginBottom="15dp" />
+
+    <TextView
+        android:id="@+id/statusTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Status: Not connected"
+        android:textSize="14sp"
+        android:padding="10dp"
+        android:gravity="center"
+        android:layout_marginBottom="20dp"
+        android:background="#f0f0f0" />
+
+    <Button
+        android:id="@+id/dashboardButton"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="Open Dashboard"
+        android:textSize="16sp" />
+
+</LinearLayout>
