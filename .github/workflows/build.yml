@@ -22,19 +22,22 @@ jobs:
 
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2
+      with:
+        gradle-version: 8.2
 
-    - name: Make gradlew executable
-      run: chmod +x MuseEEGAndroid/gradlew
+    - name: Validate Gradle wrapper
+      run: |
+        cd MuseEEGAndroid
+        chmod +x gradlew
+        ./gradlew --version
 
     - name: Build Debug APK
-      run: |
-        cd MuseEEGAndroid
-        ./gradlew assembleDebug
+      working-directory: ./MuseEEGAndroid
+      run: ./gradlew clean assembleDebug
 
     - name: Build Release APK
-      run: |
-        cd MuseEEGAndroid
-        ./gradlew assembleRelease
+      working-directory: ./MuseEEGAndroid
+      run: ./gradlew clean assembleRelease
       continue-on-error: true
 
     - name: Upload Debug APK
