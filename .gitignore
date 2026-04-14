@@ -7,11 +7,9 @@ build/
 *.ap_
 *.dex
 *.class
-*.jar
 
 # Java
 *.class
-*.jar
 
 # IDE
 .idea/
@@ -36,10 +34,8 @@ app/build/
 */build/
 
 # Gradle
-gradle/
-gradlew
-gradlew.bat
 .gradle
+gradle/wrapper/dists
 
 # Local properties
 local.properties
